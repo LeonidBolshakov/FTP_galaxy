@@ -1,3 +1,4 @@
+import os
 from sys import argv
 
 from pathlib import Path
@@ -47,15 +48,16 @@ def main():
             case 'текстд': add_text(paragraph, processing_ТекстД_template(lm_value, release_date))
             case 'ссылка': add_hyperlink(paragraph, lm_value, lm_value)
             case 'компоненты': add_text(paragraph, get_list_components())
-            case _: raise MyException(f'В шаблоне письма нераспознанный ключ строки - "{line_mail[0]}"', 777)
+            case _: raise MyException(f'В шаблоне письма нераспознанный ключ строки - "{line_mail[0]}"',
+                                      777)
 
     try:
-        doc.save(C.WORD_NAME)
+        file_word = Path(Path.cwd(), C.WORD_NAME)
+        doc.save(file_word)
+        print(f'Информационное письмо сформировано -> {file_word}')
     except PermissionError as err:
-        raise MyException(f'Нет доступа к файлу "{C.WORD_NAME}"\n'
+        raise MyException(f'Нет доступа к файлу "{file_word}"\n'
                           f'{err}', 777)
-
-    input('Нажмите Enter')
 
 
 def check_options():
@@ -146,20 +148,22 @@ def get_list_components() -> str:
 
     result = ''
     for file in component_files:
-        result += name_file_to_component(file) + C.COMPONENT_SEPARATOR
+        name_component = convert_file_to_component(file)
+        if name_component:
+            result += name_component + C.COMPONENT_SEPARATOR
 
     return processing_end_of_line(result)
 
 
-def name_file_to_component(file: Path) -> str:
-    """ Функция name_file_to_component(file: Path) -> str:
+def convert_file_to_component(file: Path) -> str:
+    """ Функция convert_file_to_component(file: Path) -> str:
             Преобразует имя файла в имя компонента.
         :param
             file: Имя файла (Name.Ext)
         :return:
             Имя компонента (Name)
     """
-    return file.stem
+    return file.stem if file.suffix != '.acc' and file.suffix != '.sfv' else None
 
 
 def processing_end_of_line(line: str) -> str:
@@ -182,6 +186,7 @@ def processing_error() -> None:
     print(f'{e.text_err}\n')
     print(f'Программа закончила свою работу\n'
           f'Код возврата {e.ret_code}')
+    input('Нажмите Enter')
     exit(e.ret_code)
 
 
@@ -194,4 +199,6 @@ if __name__ == '__main__':
     else:
         print('Программа закончила свою работу\n'
               'Код возврата - 0')
+
+    input('Нажмите Enter')
 

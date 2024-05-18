@@ -70,11 +70,12 @@ def get_components() -> (Path, Path, list):
             Список файлов (компонент) выбранной директории.
     """
 
-    if len(argv) != 2:
+    if not 2 <= len(argv) <= 3:
         raise MyException("Программе передано неверное количество параметров.\n"
                           "Программа принимает 1 параметр:\n"
                           "   Имя директории с дистрибутивом обновлений, например,\n"
-                          "   c:\\Дистрибутив\\PREPARE').\n", 1000)
+                          "   c:\\Дистрибутив\\PREPARE').\n"
+                          "   Допускается второй, необрабатываемый, параметр", 1000)
 
     dir_components = Path(argv[1])
     try:
@@ -94,7 +95,7 @@ def get_components() -> (Path, Path, list):
 
     for file in sub_dir_oldest.glob('*.*'):
         raise MyException(f'Директория {sub_dir_oldest} не пуста\n'
-                          'Работа программы невозможна', 1000)
+                          'Обработайте и очистите директорию, выполните программу path_men', 1000)
 
     return dir_components, sub_dir_oldest, list_components
 

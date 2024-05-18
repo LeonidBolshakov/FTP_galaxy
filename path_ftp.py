@@ -96,11 +96,11 @@ def main() -> (FTP, int, int):
                           "   c:\\Дистрибутив\\PREPARE\n"                          
                           "2. Имя директории FTP сервера Галактика, например,\n"
                           "   /pub/support/galaktika/bug_fix/GAL910/UPDATES/\n", 777)
-
+    logging.info(Path(ftp_dir).name)
     VPN_connected = is_VPN_connected()
     local_subdir = create_local_subdir(name_local_dir=local_dir)
     already_copied_files = selection_already_copied_files(local_subdir=local_subdir)
-    stop_files = selection_stop_files(VPN_connected=VPN_connected)
+    stop_list_files = selection_stop_list_files(VPN_connected=VPN_connected)
     local_files = get_local_files(local_dir=local_dir)
 
     ftp = connect_to_ftp(ftp_site=C.FTP_SITE, ftp_dir=ftp_dir, user=C.USER, password=C.PASSWORD)
@@ -108,7 +108,7 @@ def main() -> (FTP, int, int):
 
     for ftp_file in ftp_files:
         if ftp_file not in local_files and ftp_file not in already_copied_files:
-            if not VPN_connected and is_stop_file(ftp_file, stop_files):
+            if not VPN_connected and is_stop_file(ftp_file, stop_list_files):
                 count_of_files_not_copied += 1
                 logging.info(f'Файл {ftp_file} в стоп списке:\nФайл {ftp_file} не скопирован\n')
                 continue
@@ -116,6 +116,10 @@ def main() -> (FTP, int, int):
                 count_of_files_copied += 1
             else:
                 count_of_files_not_copied += 1
+
+    if count_of_files_copied != 0 and Path(ftp_dir).name == 'UPDATES':
+        if copy_from_ftp_file(ftp, 'UPDATES.sfv', local_subdir):
+            count_of_files_copied += 1
 
     if count_of_files_not_copied == 0 and count_of_files_copied != 0:
         logging.info(f'Переписано файлов: {count_of_files_copied}')
@@ -131,8 +135,8 @@ def main() -> (FTP, int, int):
     return ftp, count_of_files_copied, count_of_files_not_copied
 
 
-def selection_stop_files(VPN_connected: bool) -> list:
-    """ Функция selection_stop_files(VPN_connected:bool) -> list:
+def selection_stop_list_files(VPN_connected: bool) -> list:
+    """ Функция selection_stop_list_files(VPN_connected:bool) -> list:
             Формирует список файлов, которые не надо переписывать с FTP сервера
             (Стоп лист)
         :param
@@ -251,17 +255,17 @@ def get_local_files(local_dir: str) -> set:
     return set(list_files)
 
 
-def is_stop_file(ftp_file: str, stop_files: list[str]) -> bool:
-    """ Функция is_stop_file(ftp_file, stop_files) -> bool:
+def is_stop_file(ftp_file: str, stop_list_files: list[str]) -> bool:
+    """ Функция is_stop_file(ftp_file, stop_list_files) -> bool:
             Проверяет входит ли файл в стоп лист.
         :param
-            ftp_file:       Имя файла
-            stop_files:     Список имён файлов стоп листа
+            ftp_file:           Имя файла
+            stop_list_files:    Список имён файлов стоп листа
         :return:
             True если файл входит в стоп лист, False - если не входит.
     """
     name = f.reset_component_version(ftp_file)
-    return True if name in stop_files else False
+    return True if name in stop_list_files else False
 
 
 def copy_from_ftp_file(ftp: FTP, ftp_file: str, local_subdir: Path) -> bool:
