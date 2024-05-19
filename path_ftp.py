@@ -5,7 +5,7 @@ from pathlib import Path
 import logging
 import socket
 
-import constant as C
+from constant import const as C
 import component_functions as f
 import path_men
 

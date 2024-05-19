@@ -2,7 +2,7 @@ from sys import exit, argv
 from pathlib import Path
 import logging
 import component_functions as f
-import constant as C  # Константы
+from constant import const as C  # Константы
 
 
 class MyException(Exception):
@@ -27,8 +27,8 @@ def main_() -> None:
     except MyException as e:
         logging.error(e.text_err)
         exit(e.return_code)
-    except Exception as e:
-        logging.critical(f'Непредвиденная ошибка\n{e}')
+#    except Exception as e:
+#        logging.critical(f'Непредвиденная ошибка\n{e}')
 
 
 def main() -> None:

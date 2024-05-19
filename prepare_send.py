@@ -7,7 +7,7 @@ from docx.oxml.ns import nsdecls
 from docx.enum.dml import MSO_THEME_COLOR
 import docx
 
-import constant as C
+from constant import const as C
 
 
 class MyException(Exception):

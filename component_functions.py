@@ -1,6 +1,5 @@
 from re import match
-
-import constant as C
+from constant import const as C
 
 
 def is_eq_name(tuple1: tuple, tuple2: tuple) -> bool:
