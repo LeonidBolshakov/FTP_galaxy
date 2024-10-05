@@ -7,13 +7,8 @@ import socket
 
 from constant import const as C
 import component_functions as f
+
 import path_men
-
-
-class MyException(Exception):
-    def __init__(self, text_err, ret_code):
-        self.text_err = text_err
-        self.ret_code = ret_code
 
 
 def main_():
@@ -27,7 +22,7 @@ def main_():
     ftp = None
     try:
         (ftp, count_of_files_copied, count_of_files_not_copied) = main()
-    except MyException as e:
+    except f.MyException as e:
         logging.error(
             f"{e.text_err}\n"
             f"Программа завершила работу.\n"
@@ -102,7 +97,7 @@ def main() -> tuple[FTP, int, int]:
     try:
         _, local_dir, ftp_dir = argv
     except ValueError:
-        raise MyException(
+        raise f.MyException(
             "Программе передано неверное количество параметров.\n"
             "Программа принимает 2 параметра:\n"
             "1. Имя директории локального диска с дистрибутивом обновлений, например,\n"
@@ -147,7 +142,7 @@ def main() -> tuple[FTP, int, int]:
         path_men.main_()
 
     if not is_same_directories(ftp, Path(local_dir)):
-        raise MyException(
+        raise f.MyException(
             "Состав и/или размеры файлов на FTP сервере и локальном компьютере не совпали",
             777,
         )
@@ -211,7 +206,7 @@ def my_exit(ftp: FTP, ret_code: int):
     try:
         input("Для завершения работы нажмите клавишу Enter")
     except KeyboardInterrupt:
-        MyException("Оператор прервал работу программы", ret_code)
+        f.MyException("Оператор прервал работу программы", ret_code)
     exit(ret_code)
 
 
@@ -232,7 +227,7 @@ def connect_to_ftp(ftp_site: str, ftp_dir: str, user: str, password: str) -> FTP
         ftp.login(user=user, passwd=password)
         ftp.cwd(ftp_dir)
     except Exception as e:
-        raise MyException(f"Ошибка при доступе к FTP серверу\n {e}", 777)
+        raise f.MyException(f"Ошибка при доступе к FTP серверу\n {e}", 777)
 
     return ftp
 
@@ -246,14 +241,14 @@ def create_local_subdir(name_local_dir: str) -> Path:
         Cозданная поддиректория.
     """
     local_subdir = Path(name_local_dir, C.SUB_DIR_NEW)
+    f.rename_subdir(local_subdir)
 
-    if not local_subdir.is_dir():
-        try:
-            local_subdir.mkdir(parents=False)
-        except Exception as err:
-            raise MyException(
-                f"Не могу создать директорию: {local_subdir}, \n" f"Ошибка {err}", 777
-            )
+    try:
+        local_subdir.mkdir(parents=False)
+    except Exception as err:
+        raise f.MyException(
+            f"Не могу создать директорию: {local_subdir}, \n" f"Ошибка {err}", 777
+        )
 
     return local_subdir
 
@@ -271,7 +266,7 @@ def get_local_files(local_dir: str) -> set:
         directory_files = Path(local_dir)
         list_files = [file.name for file in directory_files.iterdir() if file.is_file()]
     except Exception as e:
-        raise MyException(f"Нет доступа к директории {local_dir}", 777)
+        raise f.MyException(f"Нет доступа к директории {local_dir}", 777)
 
     return set(list_files)
 
@@ -332,7 +327,7 @@ def copy_from_ftp_file(ftp: FTP, ftp_file: str, local_subdir: Path) -> bool:
         return False
     except KeyboardInterrupt:
         del_local_file(local_file)
-        raise MyException("Прорграмма прервана оператором", 1000)
+        raise f.MyException("Прорграмма прервана оператором", 1000)
 
 
 def del_local_file(local_file: Path) -> None:

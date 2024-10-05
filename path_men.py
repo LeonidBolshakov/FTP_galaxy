@@ -5,12 +5,6 @@ import component_functions as f
 from constant import const as C  # Константы
 
 
-class MyException(Exception):
-    def __init__(self, text_err, return_code):
-        self.text_err = text_err
-        self.return_code = return_code
-
-
 def main_() -> None:
     """Функция main() -> None
     Обрабатывает прерывания сгенерированные в функции main_
@@ -27,9 +21,9 @@ def main_() -> None:
 
     try:
         main()
-    except MyException as e:
+    except f.MyException as e:
         logging.error(e.text_err)
-        exit(e.return_code)
+        exit(e.ret_code)
 
 
 #    except Exception as e:
@@ -81,7 +75,7 @@ def get_components() -> tuple[Path, Path, list]:
     """
 
     if not 2 <= len(argv) <= 3:
-        raise MyException(
+        raise f.MyException(
             "Программе передано неверное количество параметров.\n"
             "Программа принимает 1 параметр:\n"
             "   Имя директории с дистрибутивом обновлений, например,\n"
@@ -94,7 +88,7 @@ def get_components() -> tuple[Path, Path, list]:
     try:
         list_components = dir_components.glob("*.*")
     except Exception as e:
-        raise MyException(
+        raise f.MyException(
             f"Нет доступа к каталогу {dir_components}\n"
             f"{e}\n"
             f"Обратитесь к системному администратору.",
@@ -102,10 +96,12 @@ def get_components() -> tuple[Path, Path, list]:
         )
 
     sub_dir_oldest = Path(dir_components, C.SUB_DIR_OLD)
+    f.rename_subdir(sub_dir_oldest)
+
     try:
         sub_dir_oldest.mkdir(exist_ok=True)
     except Exception as e:
-        raise MyException(
+        raise f.MyException(
             f"Нет доступа к каталогу {sub_dir_oldest}\n"
             f"{e}\n"
             f"Обратитесь к системному администратору.",
@@ -113,7 +109,7 @@ def get_components() -> tuple[Path, Path, list]:
         )
 
     for file in sub_dir_oldest.glob("*.*"):
-        raise MyException(
+        raise f.MyException(
             f"Директория {sub_dir_oldest} не пуста\n"
             "Обработайте и очистите директорию, выполните программу path_men",
             1000,
@@ -154,7 +150,7 @@ def remove_oldest_file(
     try:
         file_from.rename(file_to)
     except Exception as e:
-        raise MyException(
+        raise f.MyException(
             f"Не могу копировать файл {file_to}\n"
             f"{e}\n"
             f"Обратитесь к системному администратору.",
