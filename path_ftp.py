@@ -1,27 +1,31 @@
-import os.path
-from sys import argv
-from ftplib import FTP
-from pathlib import Path
 import logging
 import socket
+from ftplib import FTP
+from pathlib import Path
+from sys import argv
 
-from constant import const as C
 import component_functions as f
-
 import path_men
+from constant import const as c
 
 
 def main_():
     """Функция:
         main_
     Назначение:
-        вызывает функцию main, обрабатывает прерывания,
-        сгенерированные этой функцией и завершает работу программы.
+        вызывает функцию main, обрабатывает сгенерированные прерывания
+        и завершает работу программы.
     """
 
     ftp = None
     try:
         (ftp, count_of_files_copied, count_of_files_not_copied) = main()
+    except KeyboardInterrupt:
+        ret_code = 1000
+        logging.critical(
+            "Оператор прекратил работу программы\n" f"Код возврата {ret_code}"
+        )
+        my_exit(ftp, ret_code)
     except f.MyException as e:
         logging.error(
             f"{e.text_err}\n"
@@ -31,14 +35,9 @@ def main_():
         my_exit(ftp, e.ret_code)
     except Exception as e:
         ret_code = 1000
+        tb = traceback.format_exc()
         logging.critical(
-            f"{e}\n" f"Программа завершилась аварийно\n" f"Код возврата {ret_code}\n"
-        )
-        my_exit(ftp, ret_code)
-    except KeyboardInterrupt:
-        ret_code = 1000
-        logging.critical(
-            "Оператор прекратил работу программы\n" f"Код возврата {ret_code}"
+            f"{e}\n" f"Программа завершилась аварийно\n{tb}\nКод возврата {ret_code}\n"
         )
         my_exit(ftp, ret_code)
     else:
@@ -76,12 +75,12 @@ def main() -> tuple[FTP, int, int]:
         main() -> tuple[FTP, int, int]
     Назначение
         Файлы, существующие на FTP сервере и отсутствующие в директории компьютера,
-        записываются в поддиректрию директории компьютера.
+        записываются в поддиректорию.
     Результат:
         tuple, состоящий из 3 целых чисел:
         1. FTP сервер
         2. Количество скопированных файлов
-        3. Количество не скопированных файлов
+        3. Количество не скопированных файлов.
     """
     file_log = logging.FileHandler("Log_FTP.log")
     console_out = logging.StreamHandler()
@@ -108,19 +107,19 @@ def main() -> tuple[FTP, int, int]:
         )
     logging.info(Path(ftp_dir).name)
     VPN_connected = is_VPN_connected()
-    local_subdir = create_local_subdir(name_local_dir=local_dir)
+    local_subdir = check_local_subdir(name_local_dir=local_dir)
     already_copied_files = selection_already_copied_files(local_subdir=local_subdir)
     stop_list_files = selection_stop_list_files(VPN_connected=VPN_connected)
     local_files = get_local_files(local_dir=local_dir)
 
     ftp = connect_to_ftp(
-        ftp_site=C.FTP_SITE, ftp_dir=ftp_dir, user=C.USER, password=C.PASSWORD
+        ftp_site=c.FTP_SITE, ftp_dir=ftp_dir, user=c.USER, password=c.PASSWORD
     )
     ftp_files = ftp.nlst()
 
     for ftp_file in ftp_files:
         if ftp_file not in local_files and ftp_file not in already_copied_files:
-            if not VPN_connected and is_stop_file(ftp_file, stop_list_files):
+            if not VPN_connected and is_stop_list_file(ftp_file, stop_list_files):
                 count_of_files_not_copied += 1
                 logging.info(
                     f"Файл {ftp_file} в стоп списке:\nФайл {ftp_file} не скопирован\n"
@@ -162,7 +161,7 @@ def selection_stop_list_files(VPN_connected: bool) -> list:
     """
     if not VPN_connected:
         stop_list_files = []
-        with open(C.FILE_STOP_LIST) as file_stop_list:
+        with open(c.FILE_STOP_LIST) as file_stop_list:
             for line in file_stop_list:
                 name = f.reset_component_version(line)
                 stop_list_files.append(name)
@@ -204,7 +203,7 @@ def my_exit(ftp: FTP, ret_code: int):
         pass
 
     try:
-        input("Для завершения работы нажмите клавишу Enter")
+        input("Для завершения работы нажмите клавишу Enter\n")
     except KeyboardInterrupt:
         f.MyException("Оператор прервал работу программы", ret_code)
     exit(ret_code)
@@ -223,7 +222,7 @@ def connect_to_ftp(ftp_site: str, ftp_dir: str, user: str, password: str) -> FTP
     """
 
     try:
-        ftp = FTP(ftp_site, timeout=C.TIME_OUT_SEC)
+        ftp = FTP(ftp_site, timeout=c.TIME_OUT_SEC)
         ftp.login(user=user, passwd=password)
         ftp.cwd(ftp_dir)
     except Exception as e:
@@ -232,23 +231,30 @@ def connect_to_ftp(ftp_site: str, ftp_dir: str, user: str, password: str) -> FTP
     return ftp
 
 
-def create_local_subdir(name_local_dir: str) -> Path:
+def check_local_subdir(name_local_dir: str) -> Path:
     """Функция:
-        create_local_subdir(name_local_dir: str) -> Path
+        check_local_subdir(name_local_dir: str) -> Path
     Аргумент:
         name_local_dir: str - имя директории, в которой создаётся поддиректория.
     Результат:
-        Cозданная поддиректория.
+        Проверенная поддиректория.
     """
-    local_subdir = Path(name_local_dir, C.SUB_DIR_NEW)
-    f.rename_subdir(local_subdir)
-
-    try:
-        local_subdir.mkdir(parents=False)
-    except Exception as err:
-        raise f.MyException(
-            f"Не могу создать директорию: {local_subdir}, \n" f"Ошибка {err}", 777
-        )
+    local_subdir = Path(name_local_dir, c.SUB_DIR_NEW)
+    if local_subdir.exists():
+        if local_subdir.is_dir():
+            f.confirm_if_needed(local_subdir)
+            return local_subdir
+        else:
+            raise f.MyException(
+                f"{local_subdir} существует, но не является папкой", 777
+            )
+    else:
+        try:
+            local_subdir.mkdir(parents=False)
+        except Exception as err:
+            raise f.MyException(
+                f"Не могу создать директорию: {local_subdir}, \n" f"Ошибка {err}", 777
+            )
 
     return local_subdir
 
@@ -266,13 +272,13 @@ def get_local_files(local_dir: str) -> set:
         directory_files = Path(local_dir)
         list_files = [file.name for file in directory_files.iterdir() if file.is_file()]
     except Exception as e:
-        raise f.MyException(f"Нет доступа к директории {local_dir}", 777)
+        raise f.MyException(f"Нет доступа к директории {local_dir}\n{e}", 777)
 
     return set(list_files)
 
 
-def is_stop_file(ftp_file: str, stop_list_files: list[str]) -> bool:
-    """Функция is_stop_file(ftp_file, stop_list_files) -> bool:
+def is_stop_list_file(ftp_file: str, stop_list_files: list[str]) -> bool:
+    """Функция is_stop_list_file(ftp_file, stop_list_files) -> bool:
         Проверяет входит ли файл в стоп лист.
     :param
         ftp_file:           Имя файла
@@ -309,7 +315,7 @@ def copy_from_ftp_file(ftp: FTP, ftp_file: str, local_subdir: Path) -> bool:
         if count_call == 0:
             print(f"\r{progress[i_progress]}", end="")
             i_progress = (i_progress + 1) % len(progress)
-        count_call = (count_call + 1) % C.PRINTING_RATIO
+        count_call = (count_call + 1) % c.PRINTING_RATIO
 
     print(f"\rкопируем файл {ftp_file}")
 
@@ -327,7 +333,7 @@ def copy_from_ftp_file(ftp: FTP, ftp_file: str, local_subdir: Path) -> bool:
         return False
     except KeyboardInterrupt:
         del_local_file(local_file)
-        raise f.MyException("Прорграмма прервана оператором", 1000)
+        raise f.MyException("Программа прервана оператором", 1000)
 
 
 def del_local_file(local_file: Path) -> None:
@@ -362,10 +368,10 @@ def copy_dir_to_dir(dir_from: Path, dir_to: str) -> None:
     """
     for file in dir_from.glob("*.*"):
         if file.is_file():
-            copy_file(file_from=file, dir_from=dir_from, dir_to=dir_to)
+            copy_file(file_from=file, dir_to=dir_to)
 
 
-def copy_file(file_from: Path, dir_from: Path, dir_to: str) -> None:
+def copy_file(file_from: Path, dir_to: str) -> None:
     """Функция copy_file(file_from: Path, dir_from: Path, dir_to: str) -> None:
         Копирует файл из одной директорию в другую.
     :param
@@ -377,7 +383,7 @@ def copy_file(file_from: Path, dir_from: Path, dir_to: str) -> None:
     :return:
         None
     """
-    image_data: bytes = bytes()
+    image_data: bytes
     with open(file_from, "rb") as f_from:
         image_data = f_from.read()
     file_to = Path(dir_to, file_from.name)
@@ -405,6 +411,9 @@ def is_same_directories(ftp: FTP, local_dir: Path) -> bool:
         nonlocal name
 
         if line[size].strip() != "0":
+            #   ftp_file_sizes - словарь
+            #   line[name].strip() - ключ в словаре
+            #   int(line[size]) - значение, соответствующее ключу
             ftp_file_sizes[line[name].strip()] = int(line[size])
 
     ftp.retrlines(cmd="LIST", callback=my_call_back)
@@ -412,7 +421,7 @@ def is_same_directories(ftp: FTP, local_dir: Path) -> bool:
     local_file_sizes = dict()
     for file in Path(local_dir).glob("*.*"):
         if file.is_file():
-            local_file_sizes[file.name] = os.path.getsize(file)
+            local_file_sizes[file.name] = file.stat().st_size
 
     return True if is_equal_dict(ftp_file_sizes, local_file_sizes) else False
 
@@ -429,7 +438,9 @@ def is_equal_dict(dict1: dict, dict2: dict) -> bool:
     ret_value = True
     for file in dict1.keys() - dict2.keys():
         ret_value = False
-        logging.info(f"Файл {file} отсутствует в локальной директории")
+        logging.info(
+            f"Файл {file} отсутствует в локальной директории.\nПроверьте директорию {c.SUB_DIR_NEW}"
+        )
 
     for file in dict2.keys() - dict1.keys():
         ret_value = False

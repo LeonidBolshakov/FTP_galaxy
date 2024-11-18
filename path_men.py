@@ -1,6 +1,7 @@
-from sys import exit, argv
-from pathlib import Path
 import logging
+from pathlib import Path
+from sys import argv, exit
+
 import component_functions as f
 from constant import const as C  # Константы
 
@@ -24,10 +25,8 @@ def main_() -> None:
     except f.MyException as e:
         logging.error(e.text_err)
         exit(e.ret_code)
-
-
-#    except Exception as e:
-#        logging.critical(f'Непредвиденная ошибка\n{e}')
+    except Exception as e:
+        logging.critical(f"Непредвиденная ошибка\n{e}")
 
 
 def main() -> None:
@@ -86,7 +85,7 @@ def get_components() -> tuple[Path, Path, list]:
 
     dir_components = Path(argv[1])
     try:
-        list_components = dir_components.glob("*.*")
+        list_components = [file for file in dir_components.iterdir() if file.is_file()]
     except Exception as e:
         raise f.MyException(
             f"Нет доступа к каталогу {dir_components}\n"
@@ -96,7 +95,6 @@ def get_components() -> tuple[Path, Path, list]:
         )
 
     sub_dir_oldest = Path(dir_components, C.SUB_DIR_OLD)
-    f.rename_subdir(sub_dir_oldest)
 
     try:
         sub_dir_oldest.mkdir(exist_ok=True)
@@ -108,19 +106,20 @@ def get_components() -> tuple[Path, Path, list]:
             1000,
         )
 
-    for file in sub_dir_oldest.glob("*.*"):
-        raise f.MyException(
-            f"Директория {sub_dir_oldest} не пуста\n"
-            "Обработайте и очистите директорию, выполните программу path_men",
-            1000,
-        )
+    if is_dir_no_empty(sub_dir_oldest):
+        if f.dialog(C.TEXT_3, ["н", "п"]) == "н":
+            f.delete_all(sub_dir_oldest)
+        else:
+            raise f.MyException(
+                f"Старые версии компонент находятся в папке {sub_dir_oldest}\n", 1000
+            )
 
-    return dir_components, sub_dir_oldest, list(list_components)
+    return dir_components, sub_dir_oldest, list_components
 
 
 def get_oldest_component(tuple1, tuple2) -> tuple:
-    """Функция get_oldest_component(tuple1, tuple2) -> tuple
-        Cравнивает номера версий компонентов.
+    """Функция get_oldest_component(tuple1, tuple2) -> tuple.
+        Сравнивает номера версий компонентов.
 
     Аргументы:
         tuple1 (tuple): кортеж имени компонента (имя, версия, расширение файла).
@@ -137,11 +136,13 @@ def remove_oldest_file(
     dir_components: Path, sub_dir_oldest: Path, tuple_: tuple
 ) -> None:
     """Функция remove_oldest_file(dir_components: Path, tuple_: tuple) -> None
-        преремещает файл компонента в поддиректорию SUB_DIR_OLD.
+        перемещает файл компонента в поддиректорию SUB_DIR_OLD.
 
     Аргументы
-        1. dir_components: Path.    Полный путь к директории с компонентами.
-        2. tuple_:         tuple.   Картеж имени перемещаемого файла компонента (имя, версия, расширение файла).
+        1. dir_components: Path.    Директория с компонентами.
+        2. sub_dir_oldest: Path.    Директория со старыми версиями компонент
+        3. tuple_:         tuple.   Картеж имени перемещаемого файла компонента
+                                    (имя, версия, расширение файла).
     """
 
     file_name = tuple_[0] + tuple_[1] + tuple_[2]
@@ -156,6 +157,10 @@ def remove_oldest_file(
             f"Обратитесь к системному администратору.",
             1000,
         )
+
+
+def is_dir_no_empty(dir_: Path) -> bool:
+    return any(dir_.iterdir())
 
 
 if __name__ == "__main__":

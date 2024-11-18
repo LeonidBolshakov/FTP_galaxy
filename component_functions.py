@@ -1,7 +1,7 @@
-from re import match
-from constant import const as C
 from pathlib import Path
-import logging
+from re import match
+
+from constant import const as C
 
 
 class MyException(Exception):
@@ -16,7 +16,7 @@ def is_eq_name(tuple1: tuple, tuple2: tuple) -> bool:
         (имя компонента и расширение). Номера версий не сравниваются.
 
     Аргументы:
-         tuple1 (tuple): кортеж имени компонента (имя, версия, расширение файла),
+         tuple1 (tuple): кортеж имени компонента (имя, версия, расширение файла).
          tuple2 (tuple): кортеж имени компонента (имя, версия, расширение файла).
 
     Возвращает:
@@ -28,11 +28,11 @@ def is_eq_name(tuple1: tuple, tuple2: tuple) -> bool:
 
 def name_to_tuple(name: str) -> tuple[str, str, str] | None:
     """Функция name_to_tuple(name: str) -> tuple[str, str, str]
-        разбивает имя файла компонента на 3 части:
-        (имя компонента, номер версии, расширение файла)
-    :param name: str - имя файла компонента
+        разбивает имя файла компонента на 3 части.
+        (имя компонента, номер версии, расширение файла).
+    :param name: str - имя файла компонента.
     :return: (имя компонента, номер версии, расширение файла).
-    Если имя файла компонента не соответствует структуре имени компонента, то None
+    Если имя файла компонента не соответствует структуре имени компонента, то None.
     """
 
     res_match = match(C.RE_PATTERN_NAME_COMPONENT, name)
@@ -46,9 +46,9 @@ def name_to_tuple(name: str) -> tuple[str, str, str] | None:
 
 def reset_component_version(name_file: str) -> str:
     """Функция reset_component_version(name_file: str) -> str:
-        устанавливает у имени компонента нулевую версию
+        устанавливает у имени компонента нулевую версию.
 
-    :param name_file: Str - имя файла компонента
+    :param name_file: Str - имя файла компонента.
     :return: (имя компонента, '00000', расширение файла)
     Если имя файла компонента не соответствует структуре имени компонента,
     то возвращается имя файла в исходном виде.
@@ -61,32 +61,49 @@ def reset_component_version(name_file: str) -> str:
     return name
 
 
-def rename_subdir(subdir: Path) -> None:
+def confirm_if_needed(dir_: Path) -> None:
     """
-    Функция rename_subdir(subdir: Path) -> None:
-        Переименовывает входную директорию (subdir) в директорию с именем subdir_N,
-        где N - номер версии директории.
-    :param subdir: Path
-    :return: None
+    :Назначение
+        Функция проводит проверку директории и при необходимости устраняет проблему.
+    :param dir_:Path. Проверяемая директория.
+    :return: Нет.
     """
-    if not subdir.exists(follow_symlinks=False):
-        return
+    if any(dir_.iterdir()):
+        answer = dialog(f"{dir_}. {C.TEXT_1}", ["н", "п"])
+        if answer == "н":
+            delete_all(dir_)
+        print("Продолжаем работать")
 
-    num_subdir = 0
-    while True:
-        num_subdir += 1
-        if 9 < num_subdir:
-            logging.warning(f"Накопилось более 9 версий поддиректории {subdir}")
-        dir_new = Path(str(subdir.parent), subdir.name + "_" + str(num_subdir))
+    return
 
-        if not dir_new.exists():
-            break
+
+def dialog(text: str, answers: list[str]) -> str:
+    """Функция организует диалог с пользователем.
+        Функция не выпустит пользователя,
+        пока он не выберет один из допустимых вариантов ответов.
+    Параметры:
+        text: str - Текст запроса пользователя.
+        answers: list[str] - Список допустимых ответов.
+    Результат: str - допустимый ответ.
+    """
+    answer = ""
+    while answer not in (element for element in answers):
+        answer = input(text).lower()
+    return answer
+
+
+def delete_all(dir_: Path) -> None:
+    """Функция удаляет всё содержимое директории.
+        delete_all
+    Аргумент:
+        dir_: Path - Директория, из которой удаляется содержимое.
+    """
     try:
-        subdir.rename(dir_new)
-    except Exception as err:
-        raise MyException(
-            f"Не могу переименовать директорию: {subdir}, \n" f"Ошибка {err}", 777
-        )
-
-
-rename_subdir(Path(r"C:\Дистрибутив\DESCRIPTIONS\NEW"))
+        for item in dir_.iterdir():
+            if item.is_dir():
+                delete_all(item)  # рекурсивно удаляем подкаталоги
+                item.rmdir()
+            else:
+                item.unlink()
+    except Exception as e:
+        raise MyException(f"\nНе удалось удалить фвайлы из директории {dir_}\n")
