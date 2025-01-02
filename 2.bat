@@ -1,0 +1,1 @@
+python.exe C:\PycharmProjects\FTP_galaxy\path_ftp.py "c:\Дистрибутив\DESCRIPTIONS" /pub/support/galaktika/bug_fix/GAL910/DESCRIPTIONS/

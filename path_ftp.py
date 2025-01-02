@@ -353,9 +353,22 @@ def is_VPN_connected() -> bool:
         Проверяет подключен ли VPN.
     :return: True, если VPN подключен, False - если не подключен
     """
+
     hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
-    return False if local_ip.startswith("192.168.") else True
+    #  socket.getaddrinfo() возвращает список кортежей, следующей структуры:
+    #
+    # family (info[0]): для IPv4 == 2.
+    # type (info[1]): Тип сокета (например, socket.SOCK_STREAM для TCP).
+    # proto (info[2]): Протокол (обычно 0, что означает использование протокола по умолчанию для данного типа сокета).
+    # canonname (info[3]): Каноническое имя хоста (обычно пустое).
+    # sockaddr (info[4]): Сокетный адрес. Для IPv4 это кортеж (ip, port), IPv6 — (ip, port, flowinfo, scopeid).
+
+    addr_info = socket.getaddrinfo(hostname, None)
+    for info in addr_info:
+        if info[0] == 2:
+            if info[4][0][:7] != '192.168':
+                return True
+    return False
 
 
 def copy_dir_to_dir(dir_from: Path, dir_to: str) -> None:
