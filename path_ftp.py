@@ -3,6 +3,7 @@ import socket
 from ftplib import FTP
 from pathlib import Path
 from sys import argv
+import traceback
 
 import component_functions as f
 import path_men

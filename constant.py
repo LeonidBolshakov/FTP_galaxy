@@ -1,4 +1,4 @@
-# from docx.shared import Pt
+from docx.shared import Pt
 from dataclasses import dataclass
 
 
@@ -14,7 +14,7 @@ class Const:
     FILE_STOP_LIST = "stop_list.txt"  # Файл с именами файлов, не подлежащих скачиванию с FTP сервера.
     ZERO_VERSION = "00000"  # Версия компонента = 0.
     WORD_FONT_NAME = "Tahoma"  # Имя шрифта текста, формируемого, для MS WORD.
-    # WORD_FONT_SIZE = Pt(11)             # Размер шрифта текста, формируемого, для MS WORD.
+    WORD_FONT_SIZE = Pt(11)             # Размер шрифта текста, формируемого, для MS WORD.
     WORD_NAME = "Рассылка.docx"  # Имя формируемого WORD файла.
     TEXT_MAIL = "текст письма.txt"  # Файл с шаблоном текста письма.
     COMPONENT_SEPARATOR = (

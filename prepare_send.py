@@ -53,10 +53,10 @@ def main():
 
     try:
         file_word = Path(Path.cwd(), C.WORD_NAME)
-        doc.save(file_word)
+        doc.save(str(file_word))
         print(f'Информационное письмо сформировано -> {file_word}')
     except PermissionError as err:
-        raise MyException(f'Нет доступа к файлу "{file_word}"\n'
+        raise MyException(f'Нет доступа к файлу "{C.WORD_NAME}"\n'
                           f'{err}', 777)
 
 
