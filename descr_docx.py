@@ -53,7 +53,8 @@ def check_options() -> str:
     """Проверяет корректность переданных аргументов командной строки и
     возвращает единственный аргумент - путь на директорию с описаниями обновлений"""
     if len(sys.argv) != 2:
-        raise Exception(c.TEXT_ERROR_PARAMETER, 1000)
+        sys.tracebacklimit = 0
+        raise ValueError(c.TEXT_ERROR_PARAMETER, 1000)
     return sys.argv[1]
 
 

@@ -13,8 +13,8 @@ class OneSectionWordDocument:
     """Класс для работы с документом Word (одна секция)."""
 
     def __init__(self):
-        self.doc = Document()  # Объект документа
-        self.section = self.doc.sections[0]  # Первая (единственная) секция
+        self.doc = Document()  # Объект документа, в который будет помещена таблица
+        self.section = self.doc.sections[0]  # Первая (единственная) секция документа
 
     def save(self, name_document: str) -> None:
         """Сохраняет документ. Обрабатывает ошибку доступа."""

@@ -2,7 +2,7 @@ import logging
 import socket
 from ftplib import FTP
 from pathlib import Path
-from sys import argv
+from sys import argv, exit
 import traceback
 
 import component_functions as f

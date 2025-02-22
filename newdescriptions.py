@@ -30,11 +30,11 @@ class NewDescriptions:
         self.buffer = ""  # Буфер для накопления текста
         self.topics: dict[str, Jira] = (
             {}
-        )  # Словарь описаний задач (ключ: информация о задаче)
+        )  # Словарь описаний задач (ключ: номер проблемы в JIRA)
         # Временные переменные для текущей задачи
         self.topic_key = ""
         self.topic_value = Jira([], "", "", "")
-        self.file = ""  # Имя текущего файла
+        self.file = ""  # Имя файла с описанием задачи
         self.partition = ""  # Текущий раздел (например: описание, изменения)
 
     def processing_descriptions(self) -> None:
