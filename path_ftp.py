@@ -367,7 +367,7 @@ def is_VPN_connected() -> bool:
     addr_info = socket.getaddrinfo(hostname, None)
     for info in addr_info:
         if info[0] == 2:
-            if info[4][0][:7] != '192.168':
+            if info[4][0][:7] != "192.168":
                 return True
     return False
 

@@ -134,9 +134,9 @@ def get_oldest_component(tuple1, tuple2) -> tuple:
     version_2 = tuple2[1]
     delta_len = len(version_1) - len(version_2)
     if delta_len < 0:
-        version_1 += '0'*(-delta_len)
+        version_1 += "0" * (-delta_len)
     elif delta_len > 0:
-        version_2 += '0'*delta_len
+        version_2 += "0" * delta_len
 
     return tuple1 if int(version_1) < int(version_2) else tuple2
 
